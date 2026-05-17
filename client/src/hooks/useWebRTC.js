@@ -3,20 +3,31 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const TURN_USER = 'f8c8002530dcdee4d5f541d4';
-const TURN_PASS = 'Z4moMAWj+4sSFqA3';
-
-const ICE_SERVERS = {
-  iceTransportPolicy: 'relay',
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:baithak.metered.live:80', username: TURN_USER, credential: TURN_PASS },
-    { urls: 'turn:baithak.metered.live:443', username: TURN_USER, credential: TURN_PASS },
-    { urls: 'turns:baithak.metered.live:443', username: TURN_USER, credential: TURN_PASS },
-    { urls: 'turn:baithak.metered.live:80?transport=tcp', username: TURN_USER, credential: TURN_PASS },
-    { urls: 'turn:baithak.metered.live:443?transport=tcp', username: TURN_USER, credential: TURN_PASS },
-  ],
+const getIceServers = async () => {
+  try {
+    const res = await fetch(
+      'https://baithak.metered.live/api/v1/turn/credentials?apiKey=831d464b9126bf55f5edaf8c42d15d8a484f'
+    );
+    const iceServers = await res.json();
+    return { iceServers };
+  } catch (e) {
+    return {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        {
+          urls: [
+            'turn:baithak.metered.live:80',
+            'turn:baithak.metered.live:80?transport=tcp',
+            'turn:baithak.metered.live:443?transport=tcp',
+            'turns:baithak.metered.live:443',
+          ],
+          username: 'f8c8002530dcdee4d5f541d4',
+          credential: 'Z4moMAWj+4sSFqA3',
+        },
+      ],
+    };
+  }
 };
 
 export const useWebRTC = () => {
@@ -102,13 +113,14 @@ export const useWebRTC = () => {
     }
   };
 
-  const createPeerConnection = useCallback((targetUserId) => {
+  const createPeerConnection = useCallback(async (targetUserId) => {
     if (peerRef.current) {
       peerRef.current.close();
       peerRef.current = null;
     }
 
-    const peer = new RTCPeerConnection(ICE_SERVERS);
+    const iceConfig = await getIceServers();
+    const peer = new RTCPeerConnection(iceConfig);
 
     peer.onicecandidate = ({ candidate }) => {
       if (candidate && socket) {
@@ -170,7 +182,7 @@ export const useWebRTC = () => {
       setError(null);
 
       const stream = await getMedia(type);
-      const peer = createPeerConnection(targetUser._id);
+      const peer = await createPeerConnection(targetUser._id);
       stream.getTracks().forEach(track => peer.addTrack(track, stream));
 
       const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: type === 'video' });
@@ -197,7 +209,7 @@ export const useWebRTC = () => {
       setError(null);
 
       const stream = await getMedia(incomingData.type || 'video');
-      const peer = createPeerConnection(incomingData.from);
+      const peer = await createPeerConnection(incomingData.from);
       stream.getTracks().forEach(track => peer.addTrack(track, stream));
 
       await peer.setRemoteDescription(new RTCSessionDescription(incomingData.offer));
