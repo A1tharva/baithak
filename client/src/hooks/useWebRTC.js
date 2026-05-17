@@ -90,11 +90,10 @@ export const useWebRTC = () => {
 
   const getMedia = async (type = 'video') => {
   try {
-    const constraints = {
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
-      video: type === 'video' ? true : false,
-    };
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+    });
     localStreamRef.current = stream;
     setLocalStream(stream);
     return stream;
