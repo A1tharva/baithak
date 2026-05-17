@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { 
-  Mic, MicOff, Video as VideoIcon, VideoOff, 
-  PhoneOff, RefreshCw, Volume2, VolumeX, ArrowLeft 
+import {
+  Mic, MicOff, Video as VideoIcon, VideoOff,
+  PhoneOff, RefreshCw, Volume2, VolumeX, ArrowLeft
 } from 'lucide-react';
 import Avatar from './Avatar';
 
-const VideoCall = ({ 
-  localStream, remoteStream, callInfo, 
+const VideoCall = ({
+  localStream, remoteStream, callInfo,
   isMuted, isCameraOff, callDuration, formatDuration,
-  onToggleMute, onToggleCamera, onFlipCamera, onEnd 
+  onToggleMute, onToggleCamera, onFlipCamera, onEnd
 }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef(null);
-  const [pipPosition, setPipPosition] = useState({ x: 20, y: 20 }); // From bottom-right
+  const [pipPosition, setPipPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
 
@@ -39,13 +39,14 @@ const VideoCall = ({
     };
   }, []);
 
-  // Attach streams
+  // ✅ FIX: Attach local stream via ref (always runs, ref always exists)
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
   }, [localStream]);
 
+  // ✅ FIX: Attach remote stream via ref (always runs, ref always exists now)
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
@@ -55,14 +56,11 @@ const VideoCall = ({
   // Handle speaker/volume
   useEffect(() => {
     if (remoteVideoRef.current) {
-      // If speaker is off, we lower the volume significantly to simulate earpiece
-      // Note: Browsers don't easily allow switching audio output routing (earpiece vs speaker) 
-      // without setSinkId (limited support), so volume adjustment is the standard web fallback.
       remoteVideoRef.current.volume = isSpeakerOn ? 1.0 : 0.2;
     }
   }, [isSpeakerOn]);
 
-  // Dragging logic for local video (simplified)
+  // Dragging logic for local video
   const handleDragStart = (e) => {
     setIsDragging(true);
   };
@@ -75,11 +73,8 @@ const VideoCall = ({
     if (!isDragging) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // Convert to bottom-right coordinates
-    const newX = window.innerWidth - clientX - 60; // Offset for half width
-    const newY = window.innerHeight - clientY - 80; // Offset for half height
-    
+    const newX = window.innerWidth - clientX - 60;
+    const newY = window.innerHeight - clientY - 80;
     setPipPosition({
       x: Math.max(10, Math.min(newX, window.innerWidth - 130)),
       y: Math.max(10, Math.min(newY, window.innerHeight - 170))
@@ -87,31 +82,29 @@ const VideoCall = ({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[9999] bg-black overflow-hidden flex flex-col"
       onMouseMove={handleDragMove}
       onTouchMove={handleDragMove}
       onMouseUp={handleDragEnd}
       onTouchEnd={handleDragEnd}
     >
-      {/* Main Content Area (Remote Video or Audio Profile) */}
+      {/* Main Content Area */}
       <div className="absolute inset-0 w-full h-full">
         {callInfo.type === 'audio' ? (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#060d14] relative overflow-hidden">
-            {/* Hidden video element to play the remote audio stream */}
-            {remoteStream && (
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="opacity-0 pointer-events-none absolute inset-0 w-1 h-1"
-              />
-            )}
-            
-            {/* Animated background rings for audio calls */}
+            {/* ✅ FIX: Always render audio remote video element, never conditionally */}
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="opacity-0 pointer-events-none absolute inset-0 w-1 h-1"
+            />
+
+            {/* Animated background rings */}
             <div className="absolute w-[300px] h-[300px] rounded-full border border-[#22d3ee]/10 animate-[ping_4s_infinite]" />
             <div className="absolute w-[500px] h-[500px] rounded-full border border-[#22d3ee]/5 animate-[ping_6s_infinite]" />
-            
+
             <div className="z-10 flex flex-col items-center">
               <Avatar username={callInfo.name} size="2xl" />
               <h2 className="mt-8 text-3xl font-bold text-white tracking-tight">{callInfo.name}</h2>
@@ -122,28 +115,31 @@ const VideoCall = ({
             </div>
           </div>
         ) : (
-          remoteStream ? (
+          // ✅ FIX: Always render remote video element, use display:none instead of conditional render
+          <>
             <video
               ref={remoteVideoRef}
               autoPlay
               playsInline
               className="w-full h-full object-cover"
+              style={{ display: remoteStream ? 'block' : 'none' }}
             />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#060d14]">
-              <Avatar username={callInfo.name} size="xl" />
-              <p className="mt-4 text-[#22d3ee] animate-pulse">Connecting...</p>
-            </div>
-          )
+            {!remoteStream && (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-[#060d14]">
+                <Avatar username={callInfo.name} size="xl" />
+                <p className="mt-4 text-[#22d3ee] animate-pulse">Connecting...</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Local Video (PIP) - Only show for video calls */}
+      {/* Local Video (PIP) - Only for video calls */}
       {callInfo.type === 'video' && (
-        <div 
+        <div
           className="absolute z-20 cursor-move transition-transform duration-75 active:scale-105 shadow-2xl shadow-black/50"
-          style={{ 
-            bottom: pipPosition.y, 
+          style={{
+            bottom: pipPosition.y,
             right: pipPosition.x,
             width: 'min(120px, 30vw)',
             aspectRatio: '3/4'
@@ -170,12 +166,11 @@ const VideoCall = ({
       )}
 
       {/* Top Bar */}
-      <div 
-        className={`absolute top-0 left-0 right-0 z-30 p-6 flex items-center gap-4 transition-all duration-500 ${
-          showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-        } bg-gradient-to-b from-[#060d14]/80 to-transparent pt-[max(24px,env(safe-area-inset-top))]`}
+      <div
+        className={`absolute top-0 left-0 right-0 z-30 p-6 flex items-center gap-4 transition-all duration-500 ${showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+          } bg-gradient-to-b from-[#060d14]/80 to-transparent pt-[max(24px,env(safe-area-inset-top))]`}
       >
-        <button 
+        <button
           onClick={onEnd}
           className="p-2 rounded-full bg-[#0d1825]/60 border border-[#0e2a3d] text-white"
         >
@@ -188,16 +183,14 @@ const VideoCall = ({
       </div>
 
       {/* Bottom Controls */}
-      <div 
-        className={`absolute bottom-0 left-0 right-0 z-30 p-8 flex justify-center items-center gap-6 transition-all duration-500 ${
-          showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-        } bg-gradient-to-t from-[#060d14]/90 to-transparent pb-[max(32px,env(safe-area-inset-bottom))]`}
+      <div
+        className={`absolute bottom-0 left-0 right-0 z-30 p-8 flex justify-center items-center gap-6 transition-all duration-500 ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          } bg-gradient-to-t from-[#060d14]/90 to-transparent pb-[max(32px,env(safe-area-inset-bottom))]`}
       >
         <button
           onClick={onToggleMute}
-          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-            isMuted ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
-          }`}
+          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
+            }`}
         >
           {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
         </button>
@@ -205,9 +198,8 @@ const VideoCall = ({
         {callInfo.type === 'video' && (
           <button
             onClick={onToggleCamera}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              isCameraOff ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
-            }`}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isCameraOff ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
+              }`}
           >
             {isCameraOff ? <VideoOff size={24} /> : <VideoIcon size={24} />}
           </button>
@@ -220,7 +212,6 @@ const VideoCall = ({
           <PhoneOff size={28} />
         </button>
 
-        {/* Tools */}
         <div className="flex gap-4 md:gap-6">
           {callInfo.type === 'video' && (
             <button
@@ -230,12 +221,11 @@ const VideoCall = ({
               <RefreshCw size={24} />
             </button>
           )}
-          
+
           <button
             onClick={() => setIsSpeakerOn(!isSpeakerOn)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              !isSpeakerOn ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
-            }`}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${!isSpeakerOn ? 'bg-[#7f1d1d] text-white' : 'bg-[#0d1825]/80 border border-[#0e2a3d] text-[#e2f0ff]'
+              }`}
           >
             {isSpeakerOn ? <Volume2 size={24} /> : <VolumeX size={24} />}
           </button>

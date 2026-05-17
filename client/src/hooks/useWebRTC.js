@@ -41,6 +41,8 @@ export const useWebRTC = () => {
   const localStreamRef = useRef(null);
   const timerRef = useRef(null);
   const iceCandidateQueue = useRef([]);
+  // ✅ FIX: track if timer already started to avoid double-start
+  const timerStartedRef = useRef(false);
 
   useEffect(() => {
     if (error) {
@@ -60,6 +62,7 @@ export const useWebRTC = () => {
       peerRef.current = null;
     }
     iceCandidateQueue.current = [];
+    timerStartedRef.current = false;
     setLocalStream(null);
     setRemoteStream(null);
     setCallState('idle');
@@ -71,6 +74,9 @@ export const useWebRTC = () => {
   }, []);
 
   const startTimer = useCallback(() => {
+    // ✅ FIX: prevent double start
+    if (timerStartedRef.current) return;
+    timerStartedRef.current = true;
     setCallDuration(0);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -105,8 +111,8 @@ export const useWebRTC = () => {
       const msg = err.name === 'NotAllowedError'
         ? 'Camera/microphone permission denied. Please allow access and try again.'
         : err.name === 'NotFoundError'
-        ? 'No camera or microphone found on this device.'
-        : 'Could not access camera/microphone.';
+          ? 'No camera or microphone found on this device.'
+          : 'Could not access camera/microphone.';
       setError(msg);
       throw new Error(msg);
     }
@@ -122,10 +128,15 @@ export const useWebRTC = () => {
     };
 
     peer.ontrack = ({ streams }) => {
-      setRemoteStream(streams[0]);
+      console.log('🎥 ontrack fired, streams:', streams);
+      if (streams && streams[0]) {
+        setRemoteStream(streams[0]);
+      }
     };
 
+    // ✅ FIX: start timer on connectionState 'connected'
     peer.onconnectionstatechange = () => {
+      console.log('🔗 Connection state:', peer.connectionState);
       if (peer.connectionState === 'connected') {
         setCallState('connected');
         startTimer();
@@ -135,7 +146,17 @@ export const useWebRTC = () => {
       }
     };
 
+    // ✅ FIX: also start timer on iceConnectionState as fallback
+    // Some browsers/networks reach 'completed' but never fire connectionState 'connected'
     peer.oniceconnectionstatechange = () => {
+      console.log('🧊 ICE state:', peer.iceConnectionState);
+      if (
+        peer.iceConnectionState === 'connected' ||
+        peer.iceConnectionState === 'completed'
+      ) {
+        setCallState('connected');
+        startTimer(); // guarded by timerStartedRef, safe to call twice
+      }
       if (peer.iceConnectionState === 'failed') {
         peer.restartIce();
       }
