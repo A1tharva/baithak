@@ -20,13 +20,16 @@ const VideoCall = ({
 
   // Auto-hide controls
   useEffect(() => {
-    const handleActivity = () => {
-      setShowControls(true);
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
-    };
+  if (remoteVideoRef.current && remoteStream) {
+    remoteVideoRef.current.srcObject = remoteStream;
+    remoteVideoRef.current.play().catch(err => {
+      console.warn('Autoplay blocked, retrying...', err);
+      setTimeout(() => {
+        remoteVideoRef.current?.play().catch(console.error);
+      }, 1000);
+    });
+  }
+}, [remoteStream]);
 
     window.addEventListener('mousemove', handleActivity);
     window.addEventListener('touchstart', handleActivity);
