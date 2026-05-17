@@ -6,3 +6,5 @@ dist/
 .vercel
 .render
 certs/
+*.mp4
+*.pem
