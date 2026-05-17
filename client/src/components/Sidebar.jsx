@@ -422,7 +422,7 @@ const Sidebar = ({ activeConvId, onSelectConversation, conversations, setConvers
 
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch(`/api/friends/unfriend/${friend._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/friends/unfriend/${friend._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -461,7 +461,7 @@ const Sidebar = ({ activeConvId, onSelectConversation, conversations, setConvers
 
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch(`/api/friends/block/${friend._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/friends/block/${friend._id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -522,7 +522,7 @@ const Sidebar = ({ activeConvId, onSelectConversation, conversations, setConvers
     if (!user?._id) return;
 
     const token = localStorage.getItem("baithak_token");
-    fetch('/api/friends/repair-all', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/friends/repair-all`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()).then(data => {
@@ -655,7 +655,7 @@ const Sidebar = ({ activeConvId, onSelectConversation, conversations, setConvers
   const startChatWith = async (friend) => {
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch('/api/conversations', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/conversations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
