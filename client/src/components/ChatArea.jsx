@@ -115,7 +115,7 @@ const ChatArea = ({ conversation, onNewMessage, onBack }) => {
 
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch(`/api/friends/unfriend/${targetFriend._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/friends/unfriend/${targetFriend._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -151,7 +151,7 @@ const ChatArea = ({ conversation, onNewMessage, onBack }) => {
 
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch(`/api/friends/block/${targetFriend._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/friends/block/${targetFriend._id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -213,7 +213,7 @@ const ChatArea = ({ conversation, onNewMessage, onBack }) => {
   const handleUnblock = async (userId) => {
     try {
       const token = localStorage.getItem("baithak_token");
-      const res = await fetch(`/api/friends/unblock/${userId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/friends/unblock/${userId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });

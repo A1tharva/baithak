@@ -92,7 +92,7 @@ const Chat = () => {
     // Call API to mark as read persistently
     try {
       const token = localStorage.getItem("baithak_token");
-      await fetch(`/api/conversations/${conv._id}/read`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/conversations/${conv._id}/read`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

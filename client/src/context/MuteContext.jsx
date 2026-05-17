@@ -12,7 +12,7 @@ export const MuteProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('baithak_token');
         if (!token) return;
-        const res = await fetch('/api/users/muted', {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/muted`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Failed to fetch');
@@ -34,7 +34,7 @@ export const MuteProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('baithak_token');
-      await fetch(`/api/users/mute/${conversationId}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/users/mute/${conversationId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -50,7 +50,7 @@ export const MuteProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('baithak_token');
-      await fetch(`/api/users/unmute/${conversationId}`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/users/unmute/${conversationId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
