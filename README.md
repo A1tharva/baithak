@@ -2,7 +2,7 @@
 
 ![Baithak Banner](./banner.svg)
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-14b8a6?style=for-the-badge&logo=netlify)](https://https://baithak-abc123.netlify.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-14b8a6?style=for-the-badge&logo=netlify)](https://baithak-abc123.netlify.app)
 [![GitHub](https://img.shields.io/badge/GitHub-A1tharva%2Fbaithak-181717?style=for-the-badge&logo=github)](https://github.com/A1tharva/baithak)
 ![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js)
@@ -18,7 +18,7 @@
 
 ## 🚀 Live Demo
 
-🔗 **[https://https://baithak-abc123.netlify.app](https://https://baithak-abc123.netlify.app)** ← _Replace with your Netlify URL after deployment_
+🔗 **[https://https://baithak-abc123.netlify.app](https://baithak-abc123.netlify.app)
 
 ---
 
