@@ -89,24 +89,26 @@ export const useWebRTC = () => {
   };
 
   const getMedia = async (type = 'video') => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false,
-        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
-      });
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-      return stream;
-    } catch (err) {
-      const msg = err.name === 'NotAllowedError'
-        ? 'Camera/microphone permission denied. Please allow access and try again.'
-        : err.name === 'NotFoundError'
-          ? 'No camera or microphone found on this device.'
-          : 'Could not access camera/microphone.';
-      setError(msg);
-      throw new Error(msg);
-    }
-  };
+  try {
+    const constraints = {
+      audio: true,
+      video: type === 'video' ? true : false,
+    };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    localStreamRef.current = stream;
+    setLocalStream(stream);
+    return stream;
+  } catch (err) {
+    const msg = err.name === 'NotAllowedError'
+      ? 'Camera/microphone permission denied. Please allow access and try again.'
+      : err.name === 'NotFoundError'
+      ? 'No camera or microphone found on this device.'
+      : 'Could not access camera/microphone.';
+    setError(msg);
+    throw new Error(msg);
+  }
+};
+      
 
   const createPeerConnection = useCallback((targetUserId) => {
     const peer = new RTCPeerConnection(ICE_SERVERS);
