@@ -1,0 +1,8 @@
+.tick-path {
+  transition: stroke 0.3s ease;
+}
+
+.message-ticks {
+  display: inline-block;
+  vertical-align: middle;
+}
