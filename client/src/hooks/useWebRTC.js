@@ -41,7 +41,6 @@ export const useWebRTC = () => {
   const localStreamRef = useRef(null);
   const timerRef = useRef(null);
   const iceCandidateQueue = useRef([]);
-  // ✅ FIX: track if timer already started to avoid double-start
   const timerStartedRef = useRef(false);
 
   useEffect(() => {
@@ -74,7 +73,6 @@ export const useWebRTC = () => {
   }, []);
 
   const startTimer = useCallback(() => {
-    // ✅ FIX: prevent double start
     if (timerStartedRef.current) return;
     timerStartedRef.current = true;
     setCallDuration(0);
@@ -93,16 +91,8 @@ export const useWebRTC = () => {
   const getMedia = async (type = 'video') => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: type === 'video' ? {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        } : false,
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100,
-        },
+        video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false,
+        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
       });
       localStreamRef.current = stream;
       setLocalStream(stream);
@@ -122,44 +112,27 @@ export const useWebRTC = () => {
     const peer = new RTCPeerConnection(ICE_SERVERS);
 
     peer.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        socket.emit('call:ice-candidate', { to: targetUserId, candidate });
-      }
+      if (candidate) socket.emit('call:ice-candidate', { to: targetUserId, candidate });
     };
 
     peer.ontrack = ({ streams }) => {
       console.log('🎥 ontrack fired, streams:', streams);
-      if (streams && streams[0]) {
-        setRemoteStream(streams[0]);
-      }
+      if (streams && streams[0]) setRemoteStream(streams[0]);
     };
 
-    // ✅ FIX: start timer on connectionState 'connected'
     peer.onconnectionstatechange = () => {
       console.log('🔗 Connection state:', peer.connectionState);
-      if (peer.connectionState === 'connected') {
+      if (peer.connectionState === 'connected') { setCallState('connected'); startTimer(); }
+      if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) cleanup();
+    };
+
+    peer.oniceconnectionstatechange = () => {
+      console.log('🧊 ICE state:', peer.iceConnectionState);
+      if (peer.iceConnectionState === 'connected' || peer.iceConnectionState === 'completed') {
         setCallState('connected');
         startTimer();
       }
-      if (['disconnected', 'failed', 'closed'].includes(peer.connectionState)) {
-        cleanup();
-      }
-    };
-
-    // ✅ FIX: also start timer on iceConnectionState as fallback
-    // Some browsers/networks reach 'completed' but never fire connectionState 'connected'
-    peer.oniceconnectionstatechange = () => {
-      console.log('🧊 ICE state:', peer.iceConnectionState);
-      if (
-        peer.iceConnectionState === 'connected' ||
-        peer.iceConnectionState === 'completed'
-      ) {
-        setCallState('connected');
-        startTimer(); // guarded by timerStartedRef, safe to call twice
-      }
-      if (peer.iceConnectionState === 'failed') {
-        peer.restartIce();
-      }
+      if (peer.iceConnectionState === 'failed') peer.restartIce();
     };
 
     peerRef.current = peer;
@@ -168,10 +141,7 @@ export const useWebRTC = () => {
 
   const startCall = useCallback(async (targetUser, type = 'video') => {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (!window.isSecureContext && !isLocalhost) {
-      setError('Video calling requires HTTPS. Please use a secure connection.');
-      return;
-    }
+    if (!window.isSecureContext && !isLocalhost) { setError('Video calling requires HTTPS.'); return; }
     try {
       setCallState('calling');
       setCallInfo({ userId: targetUser._id, name: targetUser.username, avatar: targetUser.avatar, type, conversationId: targetUser.conversationId });
@@ -182,18 +152,12 @@ export const useWebRTC = () => {
       const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: type === 'video' });
       await peer.setLocalDescription(offer);
       socket.emit('call:offer', { to: targetUser._id, from: currentUser._id, offer, callerName: currentUser.username, callerAvatar: currentUser.avatar, callType: type, conversationId: targetUser.conversationId });
-    } catch (err) {
-      setCallState('idle');
-      console.error('Start call error:', err);
-    }
+    } catch (err) { setCallState('idle'); console.error('Start call error:', err); }
   }, [socket, currentUser, createPeerConnection]);
 
   const acceptCall = useCallback(async (incomingData) => {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (!window.isSecureContext && !isLocalhost) {
-      setError('Video calling requires HTTPS. Please use a secure connection.');
-      return;
-    }
+    if (!window.isSecureContext && !isLocalhost) { setError('Video calling requires HTTPS.'); return; }
     try {
       setCallState('connecting');
       setError(null);
@@ -208,10 +172,7 @@ export const useWebRTC = () => {
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
       socket.emit('call:answer', { to: incomingData.from, answer });
-    } catch (err) {
-      setCallState('idle');
-      console.error('Accept call error:', err);
-    }
+    } catch (err) { setCallState('idle'); console.error('Accept call error:', err); }
   }, [socket, createPeerConnection]);
 
   const rejectCall = useCallback((from) => {
@@ -228,18 +189,12 @@ export const useWebRTC = () => {
 
   const toggleMute = useCallback(() => {
     const stream = localStreamRef.current || localStream;
-    if (stream) {
-      stream.getAudioTracks().forEach(track => { track.enabled = !track.enabled; });
-      setIsMuted(prev => !prev);
-    }
+    if (stream) { stream.getAudioTracks().forEach(track => { track.enabled = !track.enabled; }); setIsMuted(prev => !prev); }
   }, [localStream]);
 
   const toggleCamera = useCallback(() => {
     const stream = localStreamRef.current || localStream;
-    if (stream) {
-      stream.getVideoTracks().forEach(track => { track.enabled = !track.enabled; });
-      setIsCameraOff(prev => !prev);
-    }
+    if (stream) { stream.getVideoTracks().forEach(track => { track.enabled = !track.enabled; }); setIsCameraOff(prev => !prev); }
   }, [localStream]);
 
   const flipCamera = useCallback(async () => {
@@ -257,14 +212,11 @@ export const useWebRTC = () => {
       localStreamRef.current.removeTrack(videoTrack);
       localStreamRef.current.addTrack(newVideoTrack);
       setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
-    } catch (err) {
-      console.error('Flip camera error:', err);
-    }
+    } catch (err) { console.error('Flip camera error:', err); }
   }, []);
 
   useEffect(() => {
     if (!socket) return;
-
     const onIncoming = (data) => {
       if (callState !== 'idle') { socket.emit('call:busy', { to: data.from }); return; }
       setCallState('incoming');
@@ -287,7 +239,6 @@ export const useWebRTC = () => {
       toast.error(message);
       if (type === 'call' || type === 'audio_call') cleanup();
     };
-
     socket.on('call:incoming', onIncoming);
     socket.on('call:answered', onAnswered);
     socket.on('call:ice-candidate', onIceCandidate);
@@ -295,7 +246,6 @@ export const useWebRTC = () => {
     socket.on('call:ended', onEnded);
     socket.on('call:busy', onBusy);
     socket.on('action_blocked', onActionBlocked);
-
     return () => {
       socket.off('call:incoming', onIncoming);
       socket.off('call:answered', onAnswered);
