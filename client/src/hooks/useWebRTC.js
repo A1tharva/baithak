@@ -8,16 +8,24 @@ const ICE_SERVERS = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    // Free TURN server for fallback (behind NAT/firewall)
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:baithak.metered.live:80',
+      username: 'f8c8002530dcdee4d5f541d4',
+      credential: 'Z4moMAWj+4sSFqA3',
     },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'turn:baithak.metered.live:443',
+      username: 'f8c8002530dcdee4d5f541d4',
+      credential: 'Z4moMAWj+4sSFqA3',
+    },
+    {
+      urls: 'turns:baithak.metered.live:443',
+      username: 'f8c8002530dcdee4d5f541d4',
+      credential: 'Z4moMAWj+4sSFqA3',
     },
   ],
 };
