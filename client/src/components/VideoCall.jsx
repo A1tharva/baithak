@@ -22,6 +22,7 @@ const VideoCall = ({
   useEffect(() => {
   if (remoteVideoRef.current && remoteStream) {
     remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(() => setTimeout(() => remoteVideoRef.current?.play(), 500));
     remoteVideoRef.current.play().catch(err => {
       console.warn('Autoplay blocked, retrying...', err);
       setTimeout(() => {
@@ -53,6 +54,7 @@ const VideoCall = ({
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(() => setTimeout(() => remoteVideoRef.current?.play(), 500));
     }
   }, [remoteStream]);
 
