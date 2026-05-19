@@ -196,10 +196,10 @@ const ChatSidebarItem = ({ chat, otherUser, lastMsg, isSelected, onOpen, onRemov
         transition: 'background 0.15s',
         marginBottom: '2px',
         minWidth: 0,
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
-      <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+      <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, overflow: 'visible' }}>
         {otherUser?.profilePic ? (
           <img src={otherUser.profilePic} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
         ) : (
