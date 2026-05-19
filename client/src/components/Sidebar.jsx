@@ -845,7 +845,7 @@ const Sidebar = ({ activeConvId, onSelectConversation, conversations, setConvers
             className="flex items-center gap-3 p-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-elevated)] transition-colors group cursor-pointer"
           >
             <div className="relative">
-              <Avatar username={otherUser?.username} profilePic={otherUser?.profilePic || otherUser?.avatar} size="md" />
+              <Avatar username={user?.username} profilePic={user?.profilePic || user?.avatar} size="md" />
               <div className="absolute -bottom-0.5 -right-0.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[var(--online)] block border-2 border-[var(--bg-secondary)]" />
               </div>
