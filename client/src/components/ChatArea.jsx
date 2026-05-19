@@ -589,7 +589,7 @@ const ChatArea = ({ conversation, onNewMessage, onBack }) => {
           onClick={() => otherMember?._id && navigate(`/profile/${otherMember._id}`)}
         >
           <div className="relative flex-shrink-0">
-            <Avatar username={otherMember?.username} profilePic={otherMember?.profilePic} size="sm" />
+            <Avatar username={otherMember?.username} profilePic={otherMember?.profilePic || otherMember?.avatar} size="sm" />
             <div className="absolute -bottom-0.5 -right-0.5">
               <OnlineIndicator isOnline={isOtherOnline} size="sm" />
             </div>
